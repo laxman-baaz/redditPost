@@ -1,0 +1,22 @@
+[project]
+name = "reddit-agent"
+version = "0.1.0"
+description = "Reddit engagement agent with human-in-the-loop review"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "praw==7.7.1",
+    "langchain==0.2.14",
+    "langchain-anthropic==0.1.23",
+    "python-dotenv==1.0.1",
+    "streamlit==1.37.1",
+    "pydantic==2.8.2",
+    "langchain-openai>=0.1.25",
+    "langchain-aws>=0.1.18",
+    "feedparser>=6.0.12",
+]
+
+[tool.uv]
+# Flat module layout (scripts at repo root) — don't try to build/install this
+# project itself; uv just manages the environment and dependencies.
+package = false
