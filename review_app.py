@@ -74,7 +74,7 @@ with col2:
     if st.session_state.get("last_fetch"):
         st.success(st.session_state["last_fetch"])
 
-items = get_items_by_status("pending_review", limit=50)
+items = get_items_by_status("pending_review", limit=50, order="DESC")
 
 if not items:
     st.info("No items pending review right now.")

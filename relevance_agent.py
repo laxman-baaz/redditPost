@@ -10,6 +10,7 @@ Run as a long-lived process:
     python relevance_agent.py
 """
 import json
+import re
 import time
 
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -56,6 +57,24 @@ def build_llm():
 llm = build_llm()
 
 
+def _text_of(response) -> str:
+    """Extract plain text from a chat response.
+
+    Most providers return a string. Some (e.g. Bedrock Claude with reasoning)
+    return a list of content blocks; we keep only the text blocks.
+    """
+    content = response.content
+    if isinstance(content, str):
+        return content.strip()
+    parts = []
+    for block in content:
+        if isinstance(block, str):
+            parts.append(block)
+        elif isinstance(block, dict) and block.get("type") == "text":
+            parts.append(block.get("text", ""))
+    return "".join(parts).strip()
+
+
 def score_relevance(item: dict) -> dict:
     system = prompts.RELEVANCE_SYSTEM_PROMPT.format(
         product_name=settings.PRODUCT_NAME,
@@ -66,10 +85,25 @@ def score_relevance(item: dict) -> dict:
         subreddit=item["subreddit"], body=item["body"][:4000]
     )
     response = llm.invoke([SystemMessage(content=system), HumanMessage(content=user)])
-    text = response.content.strip()
+    text = _text_of(response)
     # Strip accidental markdown fences if the model adds them
     text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
     return json.loads(text)
+
+
+_PREAMBLE_RE = re.compile(
+    r"^\s*(here'?s?\s+(a|my|the)\s+(draft|reply|response)[^\n:]*:|draft\s*(reply)?\s*:)\s*",
+    re.IGNORECASE,
+)
+# A trailing meta-note the model sometimes appends, e.g. "[note: this works because ...]".
+_META_NOTE_RE = re.compile(r"\n*\s*\[?\s*note:.*$", re.IGNORECASE | re.DOTALL)
+
+
+def _clean_draft(text: str) -> str:
+    """Strip preambles / meta-notes the model sometimes wraps around the reply."""
+    text = _PREAMBLE_RE.sub("", text)
+    text = _META_NOTE_RE.sub("", text)
+    return text.strip()
 
 
 def draft_reply(item: dict, should_mention_product: bool) -> str:
@@ -84,7 +118,7 @@ def draft_reply(item: dict, should_mention_product: bool) -> str:
         should_mention_product=should_mention_product,
     )
     response = llm.invoke([SystemMessage(content=system), HumanMessage(content=user)])
-    return response.content.strip()
+    return _clean_draft(_text_of(response))
 
 
 def process_item(item: dict):

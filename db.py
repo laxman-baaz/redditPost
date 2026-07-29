@@ -97,10 +97,17 @@ def insert_candidate(
         )
 
 
-def get_items_by_status(status: str, limit: int = 50):
+def get_items_by_status(status: str, limit: int = 50, order: str = "ASC"):
+    """Fetch items by status.
+
+    order="ASC"  -> oldest first (FIFO; used by the posting agent).
+    order="DESC" -> newest first (used by the review dashboard so freshly
+                    fetched items appear at the top).
+    """
+    direction = "DESC" if str(order).upper() == "DESC" else "ASC"
     with get_conn() as conn:
         rows = conn.execute(
-            "SELECT * FROM items WHERE status = ? ORDER BY fetched_at ASC LIMIT ?",
+            f"SELECT * FROM items WHERE status = ? ORDER BY fetched_at {direction} LIMIT ?",
             (status, limit),
         ).fetchall()
         return [dict(r) for r in rows]
