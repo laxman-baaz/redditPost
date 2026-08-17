@@ -132,3 +132,47 @@ for item in items:
 
             if btn_cols[2].button("Skip for now", key=f"skip_{item['reddit_id']}"):
                 st.info("Left in queue — refresh later.")
+
+
+# --- Approved: ready to post manually ---------------------------------------
+# Since we run without Reddit API creds (post_agent.py stays parked), approved
+# replies aren't auto-posted. This section makes posting-as-yourself fast:
+# copy the reply, open the thread, paste, and mark it done.
+st.divider()
+st.header("Approved — ready to post manually")
+st.caption(
+    "No auto-posting: copy each reply, open the thread on Reddit, post it as "
+    "yourself, then click **Mark as posted** to clear it from this list."
+)
+
+approved = get_items_by_status("approved", limit=100, order="DESC")
+if not approved:
+    st.info("Nothing approved yet. Approve a draft above and it shows up here.")
+else:
+    st.write(f"{len(approved)} approved reply(ies) waiting to be posted")
+
+for item in approved:
+    with st.container(border=True):
+        st.markdown(
+            f"**r/{item['subreddit']}** · matched: `{item['matched_keyword']}`"
+        )
+        reply_text = item.get("final_reply") or item.get("draft_reply", "")
+        # st.code renders a one-click copy button in its top-right corner.
+        st.code(reply_text, language=None, wrap_lines=True)
+
+        link_col, done_col = st.columns([3, 1])
+        with link_col:
+            st.markdown(f"[Open thread on Reddit →]({item['permalink']})")
+        with done_col:
+            if st.button(
+                "Mark as posted",
+                key=f"posted_{item['reddit_id']}",
+                type="primary",
+                use_container_width=True,
+            ):
+                update_item(
+                    item["reddit_id"],
+                    status="posted",
+                    posted_at=int(time.time()),
+                )
+                st.rerun()
