@@ -12,6 +12,10 @@ review. A human copies each approved reply and posts it manually. This keeps
 the tool firmly on the right side of Reddit's rules — undisclosed,
 fully-autonomous promotional posting violates them and tends to backfire.
 
+> **Reviewing this for a Reddit data-access request?** See
+> [WHAT_THIS_DOES.md](WHAT_THIS_DOES.md) for a concise, read-only summary of
+> exactly what the tool does and doesn't do.
+
 ## Architecture
 
 ```
