@@ -5,7 +5,9 @@ Run with:
 
 Shows every item with status='pending_review', lets a human read the
 original post/comment, edit the drafted reply, and approve/reject/skip.
-Only 'approved' items get posted (by post_agent.py).
+Nothing is posted automatically: approved replies appear in the
+"Approved — ready to post manually" section for you to copy and post
+yourself as a normal Reddit user.
 """
 import time
 
@@ -135,9 +137,9 @@ for item in items:
 
 
 # --- Approved: ready to post manually ---------------------------------------
-# Since we run without Reddit API creds (post_agent.py stays parked), approved
-# replies aren't auto-posted. This section makes posting-as-yourself fast:
-# copy the reply, open the thread, paste, and mark it done.
+# This tool is read-only and never posts to Reddit itself. Approved replies
+# land here so posting-as-yourself is fast: copy the reply, open the thread,
+# paste, and mark it done.
 st.divider()
 st.header("Approved — ready to post manually")
 st.caption(

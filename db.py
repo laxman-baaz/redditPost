@@ -130,16 +130,6 @@ def get_item(reddit_id: str):
         return dict(row) if row else None
 
 
-def get_our_posted_comment_ids() -> list[str]:
-    """Used by reply_tracker.py to know which of our comments to watch."""
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT posted_comment_id FROM items "
-            "WHERE status = 'posted' AND posted_comment_id IS NOT NULL"
-        ).fetchall()
-        return [r["posted_comment_id"] for r in rows]
-
-
 if __name__ == "__main__":
     init_db()
     print(f"Initialized database at {settings.DB_PATH}")

@@ -1,91 +1,88 @@
-# Reddit Engagement Agent (Human-in-the-Loop)
+# Reddit Engagement Assistant (Read-Only, Human-in-the-Loop)
 
-A starter codebase for monitoring Reddit for posts/comments relevant to your
-product, drafting helpful replies with an LLM, and routing every draft
-through a **human approval step** before anything is posted.
+A tool for monitoring Reddit for posts/comments relevant to your product,
+drafting helpful replies with an LLM, and routing every draft through a
+**human review step**. You then post the approved replies **yourself**, as a
+normal Reddit user.
 
-This intentionally does NOT auto-post without review. That's not a missing
-feature — undisclosed, fully-autonomous promotional posting violates
-Reddit's rules and tends to backfire hard if discovered. The human review
-step is what keeps this both compliant and actually good (a real person
-finalizes tone and judgment calls about when to mention your product).
+**This is read-only.** It never logs in to Reddit and never posts anything
+automatically. It reads public posts through Reddit's public RSS feeds (no
+API app, no credentials, no bot account) and hands you finished drafts to
+review. A human copies each approved reply and posts it manually. This keeps
+the tool firmly on the right side of Reddit's rules — undisclosed,
+fully-autonomous promotional posting violates them and tends to backfire.
 
 ## Architecture
 
 ```
-Reddit API (PRAW) --fetch & clean-->
-  Relevance & decision engine (embeddings + LLM) --drafts reply-->
-    LLM response generator -->
-      Human review queue (approve / edit / skip) -->
-        Posting layer (PRAW) -->
-          Reply tracker (watches for replies to your comments, loops back)
+Reddit public RSS feeds --fetch & clean-->
+  Relevance & decision engine (LLM) --scores + drafts reply-->
+    Human review queue (approve / edit / reject) -->
+      "Approved — ready to post" list --copy & post manually as yourself-->
 
 Memory store (SQLite) is used throughout: tracks what's been seen,
-what's been replied to, and thread context.
+scored, drafted, and reviewed so nothing is processed twice.
 ```
 
 ## Setup
 
-1. Create a Reddit app at https://www.reddit.com/prefs/apps (type: "script").
-   Use a **disclosed** account — e.g. bio says "I work on Superflow, happy
-   to help" — not an anonymous persona.
-2. Copy `.env.example` to `.env` and fill in your credentials.
-3. Install [uv](https://docs.astral.sh/uv/) (if you don't have it):
+No Reddit account or API credentials are required.
+
+1. Copy `.env.example` to `.env` and fill in your **LLM** settings
+   (Gemini API key, or AWS Bedrock via your AWS CLI credentials) plus your
+   product info and target keywords/subreddits.
+2. Install [uv](https://docs.astral.sh/uv/) (if you don't have it):
    ```bash
    # Windows (PowerShell)
    irm https://astral.sh/uv/install.ps1 | iex
    # macOS / Linux
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
-4. Install dependencies (creates a `.venv` and installs from the lockfile):
+3. Install dependencies (creates a `.venv` and installs from the lockfile):
    ```bash
    uv sync
    ```
-5. Initialize the database:
+4. Initialize the database:
    ```bash
    uv run python db.py
    ```
 
-## Running the pipeline
+## Running
 
-Run these as separate long-lived processes (or cron jobs). `uv run`
-executes each script inside the project's virtual environment:
+Everything runs from the Streamlit dashboard — fetch, score, draft, review,
+and grab approved replies to post yourself:
 
 ```bash
-# 1. Continuously fetch new posts/comments matching your keywords
-uv run python fetch_agent.py
-
-# 2. Continuously score relevance and draft replies for new items
-uv run python relevance_agent.py
-
-# 3. Human review dashboard (Streamlit) — approve/edit/reject drafts
 uv run streamlit run review_app.py
+```
 
-# 4. Post approved replies to Reddit
-uv run python post_agent.py
+In the dashboard:
+1. Edit the target keywords, then click **Fetch & score new posts**. This
+   pulls matching public posts via RSS and scores/drafts them.
+2. Review each draft in the queue — edit freely, then **Approve** / **Reject**.
+3. Scroll to **Approved — ready to post manually**: copy each reply, open the
+   thread on Reddit, post it as yourself, and click **Mark as posted**.
 
-# 5. Track replies to your own comments, feed them back into review
-uv run python reply_tracker.py
+### Utilities
+
+```bash
+# Re-draft every item already in the review queue with the current prompt
+# (run after you tune prompts.py — existing drafts don't auto-refresh)
+uv run python redraft_queue.py
 ```
 
 To add or remove dependencies, use `uv add <pkg>` / `uv remove <pkg>`
 (this updates `pyproject.toml` and `uv.lock` automatically).
 
-In practice you'd run 1, 2, 4, 5 as background workers (e.g. via
-`supervisord`, systemd, or a simple `while true` loop with sleep — already
-built into each script) and keep the Streamlit dashboard open for whoever
-is doing review.
-
 ## Files
 
 - `config.py` — loads settings from `.env`
 - `db.py` — SQLite schema + helper functions (the "memory store")
-- `fetch_agent.py` — PRAW monitoring, pushes candidate items into the DB
+- `fetch_scraper.py` — read-only fetch of public posts via Reddit RSS feeds
 - `prompts.py` — prompt templates for relevance scoring and drafting
 - `relevance_agent.py` — scores relevance, drafts replies, sets status `pending_review`
-- `review_app.py` — Streamlit dashboard for human approval
-- `post_agent.py` — posts approved replies via PRAW, sets status `posted`
-- `reply_tracker.py` — polls for replies to your comments, re-queues them for review
+- `review_app.py` — Streamlit dashboard for review + the manual-post list
+- `redraft_queue.py` — re-draft queued items after a prompt change
 
 ## Notes
 

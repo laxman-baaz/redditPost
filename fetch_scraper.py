@@ -1,11 +1,12 @@
-"""No-credentials alternative to fetch_agent.py, using Reddit's public RSS feeds.
+"""Read-only fetch of public Reddit posts via Reddit's public RSS feeds.
 
 Reddit still serves public RSS feeds (e.g. reddit.com/r/<sub>/new/.rss) even
 where the .json API is blocked, and RSS is a legitimate public-feed mechanism.
 This reads new SUBMISSIONS and COMMENTS per target subreddit, PLUS a Reddit-wide
-keyword SEARCH feed, matches your keywords, and inserts matches into the DB
-exactly like fetch_agent.py — so relevance scoring, drafting, and human review
-all work unchanged, with NO Reddit credentials.
+keyword SEARCH feed, matches your keywords, and inserts matches into the DB —
+so relevance scoring, drafting, and human review all work with NO Reddit
+credentials and no login. This is the only fetch path; nothing here writes to
+Reddit.
 
 What it covers (Tier-1 upgraded):
   * New submissions per subreddit ............ /r/<sub>/new/.rss

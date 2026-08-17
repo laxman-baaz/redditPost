@@ -5,7 +5,6 @@ description = "Reddit engagement agent with human-in-the-loop review"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "praw==7.7.1",
     "langchain==0.2.14",
     "langchain-anthropic==0.1.23",
     "python-dotenv==1.0.1",

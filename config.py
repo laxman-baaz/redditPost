@@ -11,12 +11,9 @@ def _list_from_env(key: str) -> list[str]:
 
 
 class Settings:
-    # Reddit
-    REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "")
-    REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET", "")
-    REDDIT_USERNAME = os.getenv("REDDIT_USERNAME", "")
-    REDDIT_PASSWORD = os.getenv("REDDIT_PASSWORD", "")
-    REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "reddit-agent/0.1")
+    # No Reddit credentials: this tool is read-only. It fetches public posts
+    # via Reddit's public RSS feeds (see fetch_scraper.py) — no API app, no
+    # login — and drafts replies for a human to review and post manually.
 
     # LLM provider switch: "gemini" (OpenAI-compatible) or "bedrock" (AWS).
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").lower()
